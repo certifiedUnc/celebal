@@ -33,10 +33,15 @@ where (p_i) is your predicted order volume, (a_i) is the actual order volume, an
 
 ## Run the forecasting pipeline
 
-The project includes a reproducible Python pipeline in `forecast.py`. It trains a
-gradient boosting regressor on log-transformed demand, uses hub attributes,
-calendar context, and historical demand lags, then forecasts the test horizon
-recursively. The resulting CSV follows `sample_submission.csv`'s `Id` order.
+The project includes a reproducible Python pipeline in `forecast.py`. It checks
+the train/test fields, adds calendar and hub features (including a time-aware
+hub demand mean and loyalty-round activity), and trains a regularized gradient
+boosting regressor on log-transformed demand using open training rows. It
+compares recursive forecasts with horizon-aware direct forecasts trained from
+historical 42-day forecast origins, plus a recursively carried 7-day
+seasonal-naive forecast, over three rolling 42-day folds. It tunes the forecast
+blend and a shrunken per-hub log-residual correction using those folds.
+The resulting CSV follows `sample_submission.csv`'s `Id` order.
 
 Place `orders_train.csv`, `orders_test.csv`, `hub_metadata.csv`, and
 `sample_submission.csv` in `data/` (the supplied files are included here), then
@@ -47,8 +52,8 @@ python -m pip install -r requirements.txt
 python forecast.py
 ```
 
-By default this runs a 42-day chronological validation and writes
-`submission.csv`. For a faster final fit without validation, run
+By default this runs three 42-day chronological validation folds and writes
+`submission2.csv`. For a faster final fit without validation, run
 `python forecast.py --skip-validation`. To use another data directory or output
 path, pass `--data-dir PATH` or `--output PATH`.
 
